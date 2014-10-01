@@ -1,0 +1,262 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Short Sectioned Assignment
+% LaTeX Template
+% Version 1.0 (5/5/12)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% Frits Wenneker (http://www.howtotex.com)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[paper=a4, fontsize=11pt]{scrartcl} % A4 paper and 11pt font size
+
+\usepackage[T1]{fontenc} % Use 8-bit encoding that has 256 glyphs
+\usepackage{fourier} % Use the Adobe Utopia font for the document - comment this line to return to the LaTeX default
+\usepackage[english]{babel} % English language/hyphenation
+\usepackage{amsmath,amsfonts,amsthm, amssymb} % Math packages
+
+\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
+
+\usepackage{sectsty} % Allows customizing section commands
+\allsectionsfont{\centering \normalfont\scshape} % Make all sections centered, the default font and small caps
+
+\usepackage{fancyhdr} % Custom headers and footers
+
+\usepackage{verbatim} % Enable batch comments
+
+\usepackage{algorithm}
+\usepackage{algorithmic} % pesudo code
+
+\usepackage{graphicx}
+
+%\usepackage{calligra}
+%\usepackage[T1]{fontenc} % Enable caligra typeface
+
+\usepackage{color} % enable background color
+
+\usepackage{enumerate}  % enable style ajustment of enumerate
+
+\usepackage{caption}
+\usepackage{subcaption}  % enable subfigure
+
+\usepackage{footnote}
+
+\pagestyle{fancyplain} % Makes all pages in the document conform to the custom headers and footers
+\fancyhead{} % No page header - if you want one, create it in the same way as the footers below
+\fancyfoot[L]{} % Empty left footer
+\fancyfoot[C]{} % Empty center footer
+\fancyfoot[R]{\thepage} % Page numbering for right footer
+\renewcommand{\headrulewidth}{0pt} % Remove header underlines
+\renewcommand{\footrulewidth}{0pt} % Remove footer underlines
+\setlength{\headheight}{13.6pt} % Customize the height of the header
+
+\numberwithin{equation}{section} % Number equations within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+\numberwithin{figure}{section} % Number figures within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+\numberwithin{table}{section} % Number tables within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs - comment this line for an assignment with lots of text
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\newcommand{\horrule}[1]{\rule{\linewidth}{#1}} % Create horizontal rule command with 1 argument of height
+
+\title{	
+\normalfont \normalsize 
+\textsc{Northwestern University, EECS Department} \\ [25pt] % Your university, school and/or department name(s)
+\horrule{0.5pt} \\[0.4cm] % Thin top horizontal rule
+\huge EECS 495 Homework 3 \\ % The assignment title
+\horrule{2pt} \\[0.5cm] % Thick bottom horizontal rule
+}
+
+\author{Zhiyuan Wang} % Your name
+
+\date{\normalsize\today} % Today's date or a custom date
+
+\makeatletter
+\renewcommand{\section}{\@startsection{section}{1}{0mm}
+  {-\baselineskip}{0.5 \baselineskip}{\bf\leftline}}
+\makeatother
+\makeatletter
+\renewcommand{\subsection}{\@startsection{subsection}{10}{0mm}{-\baselineskip}{0.5 \baselineskip}{\bf\leftline}}
+\makeatother
+
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newenvironment{myproof}{\begin{proof}\setlength{\parindent}{2em}}{\end{proof}}
+
+\newcommand{\argmin}{\operatornamewithlimits{argmin}}
+
+%\setcounter{section}{-1}
+\begin{document}
+\setlength{\parindent}{2em}
+\maketitle % Print the title
+
+%----------------------------------------------------------------------------------------
+%	PROBLEM 1
+%----------------------------------------------------------------------------------------
+
+\section{Accelerated proximal gradient for the lasso problem}
+the proximal gradient step:
+
+Since $\norm{A\mathbf{x}-\mathbf{b}}_2^2$ is $L$-Lipschitz by (5.2.3) we get:
+\begin{equation}
+\mathbf{x}^* = \min_\mathbf{x} \norm{\mathbf{x}-\mathbf{y}}_2^2+\cfrac{2\lambda}{L}\norm{\mathbf{x}}_1
+\end{equation}
+where $\mathbf{y}=\mathbf{x}^{k-1}-\cfrac{1}{L} \bigtriangledown f(\mathbf{x}^{k-1})$, $L = d_{max}(A^TA)$
+
+This problem is separable by each entry of $x_i$:
+\begin{equation}
+x_i^* = \argmin_x\ (x_i - y_i)^2+\cfrac{2\lambda}{L}|x_i|
+\end{equation}
+\begin{equation}
+\bigtriangledown f(x_i) = 2(x_i-y_i+\cfrac{\lambda}{L}sign(x_i))
+\end{equation}
+If $y_i=0$, then clearly $x_i^*=0$. If $y_i>0$, there must be $x_i>0$, otherwise let $\bigtriangledown f(x_i) = 0$, then for $\forall \lambda>0$, $y_i=x_i-\cfrac{\lambda}{L}< 0$, that contradicts the assumption. Likewise, when $y_i<0$, $x_i<0$.
+
+Thus,
+\begin{equation}
+x_i^k = 
+\begin{cases}
+[y_i-\cfrac{\lambda}{L}]^+ &\mbox{if} \  y>0 \\
+0 &\mbox{if} \  y = 0 \\
+-[-y_i-\cfrac{\lambda}{L}]^+ &\mbox{if} \  y<0
+\end{cases}
+\end{equation}
+\begin{equation}
+\begin{split}
+x_i^k &=\begin{bmatrix} |y_i| - \cfrac{\lambda}{L}\end{bmatrix}^+sign(y_i)\\
+ &= \left[ \begin{vmatrix}
+\left( \mathbf{x}^{k-1}-\cfrac{1}{d_{max}(A^TA)}A^T(A\mathbf{x}^{k-1}-\mathbf{b}) \right)_i
+\end{vmatrix}  - \cfrac{\lambda}{L}\right] ^+ sign\left( \left( \mathbf{x}^{k-1}-\cfrac{1}{d_{max}(A^TA)}A^T(A\mathbf{x}^{k-1}-\mathbf{b}) \right)_i \right)
+\end{split}
+\end{equation}
+the accelerated proximal gradient step:
+\begin{equation}
+\begin{split}
+x_i^k &= \left[ \begin{vmatrix}
+\left( \mathbf{y}^{k-1}-\cfrac{1}{d_{max}(A^TA)}A^T(A\mathbf{y}^{k-1}-\mathbf{b}) \right)_i
+\end{vmatrix}  - \cfrac{\lambda}{L}\right] ^+ sign\left( \left( \mathbf{y}^{k-1}-\cfrac{1}{d_{max}(A^TA)}A^T(A\mathbf{y}^{k-1}-\mathbf{b}) \right)_i \right)\\
+\mathbf{y}^k &= \mathbf{x}^{k} + \cfrac{k}{k+3}(\mathbf{x}^k - \mathbf{x}^{k-1})
+\end{split}
+\end{equation}
+\begin{figure}[htb!]
+\centering
+\includegraphics[scale=0.33]{lasso1.eps}
+\end{figure}
+\section{The L-Lipschitz constant for logistic loss}
+\begin{equation} \label{eq3}
+\bigtriangledown_\mathbf{x}^3 \mathcal{H}=\sum\limits_{n=1}^NQ\bigtriangledown f_\mathbf{x}(\mathbf{a}^n)(1-2f_\mathbf{x}(\mathbf{a}^n))R
+\end{equation}
+Let $\bigtriangledown_\mathbf{x}^3 \mathcal{H} = 0$, $f_\mathbf{x}(\mathbf{a}^n) = 0,~ \cfrac{1}{2}~,~ 1$. $\bigtriangledown_\mathbf{x}^2 \mathcal{H}$ get maxima at $f_\mathbf{x}(\mathbf{a}^n)=\cfrac{1}{2}$.
+\begin{equation}
+\begin{split}
+\bigtriangledown_x^2 \mathcal{H} &\preceq \sum\limits_{n=1}^N \cfrac{1}{4} (\mathbf{a}^n)^T \mathbf{a}^n \\
+& \preceq \cfrac{1}{4} d_{max}(A^TA)I
+\end{split}
+\end{equation}
+\begin{equation}
+L  = \cfrac{1}{4}d_{max}(A^TA)
+\end{equation}
+where $d_{max}(A^TA)$ is the largest eigenvalue of $A^TA$.
+\section{Sparse logistic regression applications}
+I tried to search some interesting stuff at IEEE Xplore, Google Scholar and Microsoft Academic Search, but nothing really caught my eyes, so I answered the other questions.
+\section{Nonnegative Matrix Factorization}
+The subproblem of minimizing over $X$ is given as
+\begin{equation}
+\begin{split}
+ \min_X\ \frac{1}{2}\norm{AX-B}_F^2 &=\frac{1}{2}\sum_{i=1}^N\norm{\mathbf{a}^iX-\mathbf{b}^i}_2^2 \\
+ subject~to~X &\geq 0 
+\end{split}
+\end{equation}
+\begin{equation}
+\begin{split}
+\bigtriangledown g(X) &= \sum_{i=1}^N (\mathbf{a}^i)^T(\mathbf{a}^iX-\mathbf{b}^i)\\
+& = A^T(AX-B)
+\end{split}
+\end{equation}
+\begin{equation}
+\begin{split}
+\bigtriangledown^2 g(X) &= \sum_{i=1}^N (\mathbf{a}^i)^T\mathbf{a}^i \\
+& = A^TA
+\end{split}
+\end{equation}
+\begin{equation}
+X^k = \begin{bmatrix} X^{k-1} - \frac{1}{L} A^T(AX^{k-1}-B)\end{bmatrix}^+
+\end{equation}
+where $L = d_{max}(A^TA)$.
+
+The subproblem of minimizing over $A$ is given as
+\begin{equation}
+\begin{split}
+ \min_X\ \frac{1}{2}\norm{AX-B}_F^2 &=\frac{1}{2}\sum_{j=1}^P\norm{A\mathbf{x}_j-\mathbf{b}_j}_2^2 \\
+ subject~to~A &\geq 0 
+\end{split}
+\end{equation}
+\begin{equation}
+\begin{split}
+\bigtriangledown g(A) &= \sum_{j=1}^P \mathbf{x}_j(A\mathbf{x}_j-\mathbf{b}_j)\\
+& = X^T(AX^T-B^T)
+\end{split}
+\end{equation}
+\begin{equation}
+\begin{split}
+\bigtriangledown^2 g(A) &= \sum_{j=1}^P \mathbf{x}_j\mathbf{x}_j^T \\
+& = XX^T
+\end{split}
+\end{equation}
+\begin{equation}
+A^k = \begin{bmatrix}
+A^{k-1} - \frac{1}{L}X^T(A^{k-1}X^T-B^T)
+\end{bmatrix}^+
+\end{equation}
+where here $L = d_{max}(XX^T)$
+\section{Robust Face Recognition}
+\begin{equation}
+\min_{\mathbf{x}, \mathbf{e}}\ \mu\norm{A\mathbf{x}+\mathbf{e}-\mathbf{b}}_2^2 + \norm{\mathbf{x}}_1+\norm{\mathbf{e}}_1
+\end{equation}
+where $\mu$ is dependent on $\epsilon$.
+The subproblem of minimizing over $\mathbf{x}$ is given as
+\begin{equation}
+\min_\mathbf{x}\ \cfrac{1}{2}\norm{A\mathbf{x}-(\mathbf{b}-\mathbf{e})}_2^2+\cfrac{1}{2\mu L_x}\norm{\mathbf{x}}_1
+\end{equation}
+\begin{equation}
+\bigtriangledown^2 f(\mathbf{x}) = A^TA 
+\end{equation}
+\begin{equation}
+\mathbf{x}^k = \mathcal{T}_{\frac{1}{2\mu L_x}}(\mathbf{x}^{k-1} - \cfrac{1}{L_x}A^T[A\mathbf{x}-(\mathbf{b}-\mathbf{e})]) 
+\end{equation}
+$$ = \begin{bmatrix} \begin{vmatrix}
+\mathbf{x}^{k-1} - \cfrac{1}{d_{max}(A^TA)}A^T[A\mathbf{x}^{k-1}-(\mathbf{b}-\mathbf{e})]
+\end{vmatrix} - \cfrac{1}{2\mu L_x} \end{bmatrix}^+ sign(\mathbf{x}^{k-1} - \cfrac{1}{d_{max}(A^TA)}A^T[A\mathbf{x}^{k-1}-(\mathbf{b}-\mathbf{e})])$$
+where $L_x = d_{max}(A^TA)$.
+
+The subproblem of minimizing over $\mathbf{e}$ is given as
+\begin{equation}
+\min_\mathbf{e}\ \cfrac{1}{2}\norm{\mathbf{e}-(\mathbf{b}-A\mathbf{x})}_2^2 + \cfrac{1}{2\mu L_e}\norm{\mathbf{e}}_1
+\end{equation}
+\begin{equation}
+\bigtriangledown^2 f(\mathbf{e}) = I
+\end{equation}
+\begin{equation}
+\mathbf{e}^k = \mathcal{T}_{\frac{1}{2\mu L_e}}(\mathbf{e}^{k-1} - \cfrac{1}{L_e}[\mathbf{e}^{k-1}-(\mathbf{b}-A\mathbf{x})]) 
+\end{equation}
+$$= \begin{bmatrix}
+\begin{vmatrix}
+\mathbf{b}-A\mathbf{x}
+\end{vmatrix} - \cfrac{1}{2\mu}
+\end{bmatrix}^+sign(\mathbf{b}-A\mathbf{x})$$
+where $L_e = 1$.
+%----------------------------------------------------------------------------------------
+
+\end{document}
