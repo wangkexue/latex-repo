@@ -1,0 +1,165 @@
+\documentclass{article}
+\usepackage{enumerate}
+\usepackage{algorithm}
+\usepackage{algorithmic} % pesudo code
+% automatical line breaking for long string
+\usepackage{seqsplit}
+
+\usepackage{geometry}
+ \geometry{
+ a4paper,
+ total={210mm,297mm},
+ left=20mm,
+ right=20mm,
+ top=20mm,
+ bottom=20mm,
+ }
+
+\usepackage{hyperref}
+
+\usepackage{listings}
+
+\lstdefinestyle{customc}{
+  belowcaptionskip=1\baselineskip,
+  breaklines=true,
+  frame=L,
+  xleftmargin=\parindent,
+  language=C,
+  showstringspaces=false,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\bfseries\color{green!40!black},
+  commentstyle=\itshape\color{purple!40!black},
+  identifierstyle=\color{blue},
+  stringstyle=\color{orange},
+}
+
+\lstdefinestyle{customasm}{
+  belowcaptionskip=1\baselineskip,
+  frame=L,
+  xleftmargin=\parindent,
+  language=[x86masm]Assembler,
+  basicstyle=\footnotesize\ttfamily,
+  commentstyle=\itshape\color{purple!40!black},
+}
+
+\lstset{escapechar=@,style=customc}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning,shapes,arrows, calc, fit, trees}
+\tikzset{
+    %Define standard arrow tip
+    >=stealth',
+    %Define style for boxes
+    punkt/.style={
+           rectangle,
+           rounded corners,
+           draw=black, very thick,
+           text width=6.5em,
+           minimum height=2em,
+           text centered},
+    % Define arrow style
+    pil/.style={
+           ->,
+           thick,
+           shorten <=2pt,
+           shorten >=2pt,}
+}
+
+\usepackage{amsmath,amsfonts,amsthm, amssymb} % Math packages
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage{dcolumn}
+\usepackage{booktabs}
+% for x\y style legend
+\usepackage{makecell}
+
+\newcolumntype{M}[1]{D{.}{.}{1.#1}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newtheoremstyle{quest}{\topsep}{\topsep}{}{}{\bfseries}{}{ }{\thmname{#1}\thmnote{ #3}.}
+\theoremstyle{quest}
+\newtheorem*{question}{Question}
+
+\newcommand{\argmax}{\operatornamewithlimits{argmax}}
+
+%\DeclareFontFamily{OT1}{pzc}{}
+%\DeclareFontShape{OT1}{pzc}{m}{it}%
+%              {<-> s * [0.900] pzcmi7t}{}
+%\DeclareMathAlphabet{\mathpzc}{OT1}{pzc}%
+%                                 {m}{it}
+%\DeclareMathAlphabet{\mathcalligra}{T1}{calligra}{m}{n}
+% allow insert tab
+%\newcommand{\tab}[1]{\hspace{.2\textwidth}\rlap{#1}}
+% align without column
+% http://tex.stackexchange.com/questions/98939
+\newcommand*\leftright[2]{%
+  \leavevmode
+  \rlap{#1}%
+  \hspace{0.5\linewidth}%
+  #2}
+\begin{document}
+\begin{enumerate}
+\item
+	\begin{enumerate}[a.]
+	\item
+	Naive Bayes model.
+	\item
+		\includegraphics[scale=0.3]{bayesNet-1.png}
+		
+		I add two edges, one between person and doors, another one between buyprice and maintprince. Because I think they are related given class, e.g. if a car can hold more person, it should have more doors to be convenient; a low maintprice can to some extent reconcile a high buyprice.
+	\item
+	    \includegraphics[scale=0.34]{bayesNet-3.png}  (1 is maintprice)
+	    
+	    Changed parameters: maxNrOfParents = 5, randomOrder = True.
+	    
+	    This Bayes Net do not have $(buyprice \perp maintprice| class), (persons \perp safety|class), (lugsize \perp safety|class)$
+	\end{enumerate}
+\item
+	\begin{enumerate}[a.]
+	\item
+	\begin{tabular}{ccccc}
+	\hline
+	classifier & BN(a)&BN(b) &BN(c) & ZeroR\\ \hline
+	accuracy & 85.3\% & 90.9\% & 94.1\% & 70\% \\ \hline
+	\end{tabular}
+	\item
+	$\alpha = 0$
+	\item
+	Because the parameter of this network was manually tuned, and since the note can have more parent, the search is more complete.
+	\end{enumerate}
+\item
+	\begin{enumerate}[a.]
+	\item
+	$P(B|A=1, C=0) = P(B|A=1)$\\
+	$P(B)^{t\rightarrow \infty} = 0$
+	\begin{proof}
+	\begin{align*}
+	P(B|A=1,C=0) &= \cfrac{P(B, A=1, C=0)}{\sum\limits_B P(B, A=1, C= 0)} \\
+	                      &= \cfrac{P(A=1)P(B|A=1)P(C=0|B)}{P(A=1)\sum\limits_B P(B|A=1)P(C=0|B)} \\
+	                      &= \cfrac{0.5\cdot P(C=0|B)}{0.5\cdot P(C=0|B=0) + 0.5\cdot P(C=0|B=1)} \\
+	                      &= P(C=0|B) 	
+	\end{align*}
+	
+	For $B=1$, $P(B=1|A=1, C=0) = P(C=0|B=1) = 0$.
+	
+	Thus $B^1 =0$, then we have $C^1=0$. No matter what $A^1$ is, we still get $B^2=0, C^2=0$ (Because $P(A=0)=P(A=1)=P(B=0|A=1)=P(B=0|A=0)=P(B=1|A=0)=P(B=1|A=1)=0.5$). By induction $P(B)^{t\rightarrow \infty} = 0$
+	\qedhere
+	\end{proof}
+	\item
+	Since $P(B=0, C=1) = P(B=1,C=0) = 0$, this gibbs chain is not regular. To make it mix, we make let $P(C=1|B=1)=P(C=0|B=0)= 1- \epsilon$.
+	
+	Test with $\epsilon = 0.01$, number of iteration = 100000. The probabilty of A, B, C:
+	
+	\begin{tabular}{ccc}
+	\hline
+	& =0 & =1\\ \hline
+	P(A) & 0.50062  & 0.49938 \\
+ P(B)& 0.50883  &0.49117 \\
+  P(C)&0.50909  &0.49091 \\ \hline
+  
+	\end{tabular}
+	\lstinputlisting[caption=gibbsSampling.py, style=customc, language=Python]{gibbsSampling.py}
+	\end{enumerate}
+\end{enumerate}
+\end{document}
