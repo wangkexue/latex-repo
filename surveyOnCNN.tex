@@ -1,0 +1,149 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath,amsfonts,amsthm} % Math packages
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage{setspace}
+\doublespacing
+
+%\usepackage{cite}
+\usepackage{natbib}
+\usepackage[colorlinks]{hyperref}
+
+%\newcommand{\sub}{\textbf{}}
+
+\title{Scene Classification using Approximate Nearest Neighbors}
+\author{Zhiyuan Wang \\Advisor: Prof. Ying Wu}
+\begin{document}
+\maketitle
+\section{Introduction}
+With the goal to make machine vision have the ability to understand the real world as good as human, scene understanding is one of the most fundamental and challenging problems of high level computer vision. It is a crucial part or potentially useful for many applications, to name just a few, content-based image and video retrieval, human computer interaction, autonomous driving, vision-based robot navigation, visual surveillance. (Apple Inc. is searching for scientist/engineer with knowledge on scene understanding right now, but I don't know what they are doing \ldots) Scene understanding is also a complex task. Image segmentation, object detection, object recognition, 3D vision, semantic analysis and even ontology-driven natural language processing, all of them can be a subtask of scene understanding. In literature, the research on scene understanding begin from some high level computer vision tasks like image segmentation, scene classification~~\citep{oliva2001modeling, xiao2010sun}, to a combination of computer vision, cognitive science~~\citep{walther2011simple, oliva2006building}, context and concept modeling, semantic analysis and summarization~~\citep{zitnickadopting, li2009towards} which involved with some natural language processing methods, on a higher level. L. Li et al. proposed a hierarchical generative model within a probabilistic framework using tags and context to do automatic classification, annotation and segmentation.~~\citep{li2009towards} Recently since the widely usage of depth camera, 3D scene understanding also become an emerging research topic, especially for indoor scene.~~\citep{lin2013holistic, delaitre2012,SilbermanCoverage:ECCV14} 3D scene understnding is slightly different than 2D scene, with more focus on geometric understanding, object localization and the reasoning behind them. 
+~~\citep{delaitre2012} used YouTube videos to learn scene semantics from long-term observation of people. They associate human pose with scene objects, and using object recognition to imporove prediction of human pose in video. In~~\citep{lin2013holistic}, D. Lin jointly solved scene classification and 3D object recognition by a conditional random field integrating both geometric and semantic context with global features (scene appearance, ranking potential, etc.) of generated candidate cuboids. N. Silberman et al. proposed a semantic segmentation models can better identify individual instances of the same classes by introducing a new higher-order loss function that directly minimizes the coverage metric and evaluate a variety of region features, including those from a convolutional network.~~\citep{SilbermanCoverage:ECCV14} (see more at ECCV 2014: Tutorial on 3D Scene Understanding) Human is capable to recognize a scene by a glance, and gain an insight in a short time. The rapid improvement on multi-class object recognition also make real time scene understanding become possible.~~\citep{karayevanytime} proposed a markov decision method doing online feature selection, cost-sensitive dynamic feature selection in their paper, to optimize any-time object and scene recognition. 
+
+Scene classification is a step stone toward total scene understanding. It gives us a categrization of scene or tags of an image like what we get from a glance, thus can be used as a global feature or prior in some higher-level and coarse-to-fine problems.~~\citep{oliva2001modeling} presented GIST descriptor computes a wavelet image decomposition, which represents an image by the output of Gabor-like filters with tuned to different orientation and scales.~~\citep{lazebnik2006beyond} improved bag-of-features method to predict scene categarization by using spatial pyramid which considers the object layout of an image. The most related work to our project is~\citep{xiao2010sun}. In~~\citep{xiao2010sun}, Xiao et al. investigated several different features' performance for scene classificaiton, and eventually combine them together to train a kernel SVM classifier achieved the best accuracy on their proposed large scale datasets. 
+\section{Large Scale Scene Understanding Datasets}
+Large scale image datasets play a crucial role on the development of mult-class object recognition toward a generalized computer vision system. Back to year 2004 tackling object recognition on databases such Caltech 101 is still a challenging task. (wow, it is almost 10 years ago ) But today collecting data is much easier, due to the growth of online photo community like Flickr. It is not surprising, ImageNet now has 14,197,122 images in tens of thousand classes, and the number will still be increasing. Thanks to crowsourcing, making annotation is also easier and feasible for large scale image datasets.~~\citep{WelinderPeronaCVPR2010} Some researchers even proposed some attribute-based approaches~~\citep{parikh2013implied,jayaraman2014zero}, which heavily depend on crowsourcing with human in the loop of object recognition.  (I personally do not quite into them, simply don't) Another approach think post-processing is not necessary, no annotation is needed. Tiny image dataset~~\citep{torralba200880}, a scene recognition dataset, contains 80M $32\times 32$ images in 75k classes.
+
+In~~\citep{xiao2010sun}, J. Xiao et al. performed experiments on 15 classes scene database~~\citep{lazebnik2006beyond} and introduced SUN (Scene UNderstanding) dataset with 397 categories containing more than 100 images per class. Recently, B. Zhou et al. introduced a new scene-centric image dataset Place with a standard CNN architecture, which is 60 times larger than SUN database. T. Lin et al. create Microsfot COCO database with a focus on common object in context.~\citep{MicrosoftCOCO} Similar as Places, they managed to provide a database with each class distributed more evenly.
+
+\begin{figure}
+\centering
+\begin{subfigure}[hb]{1\textwidth}
+\includegraphics[width=\textwidth]{COCO}
+\caption{Microsoft COCO}
+\label{fig:0-0}
+\end{subfigure}
+\hfill
+\begin{subfigure}[hb]{1\textwidth}
+\includegraphics[width=\textwidth]{Places}
+\caption{Places}
+\label{fig:0-2}
+\end{subfigure}
+%\caption{ILSVRC Object Detection Result~\citep{imgenetResult}}
+\label{f1}
+\end{figure}
+
+To study semantic scene meaning's relation with visual information, C. Zitnick et al. proposed a way to synthesis Abstract Images with objects and background.~\citep{zitnickadopting}
+
+NYUv2~\citep{Silberman:ECCV12} is a RGBD image dataset initially created for 3D indoor scene segmentation. It contains 1449 densely labeled  pairs of aligned RGB and depth images, 464 scenes of 3 cities, and 407,024 unlabeled frames.
+
+We use the same dataset as~~\citep{xiao2010sun}.
+\section{Method}
+\subsection{Approximate Nearest Neighbor Search}
+As many experiments in computer vision and machine learning suggest using large scale database is the key to obtain a good performance on real life problem.~\citep{halevy2009unreasonable} Due to the growing size of large scale database, scalability should be considered carefully. Particularly in computer vision, most features are high-dimensional, e.g. a color $32\times 32$ tiny image has 3072 dimensions, that becomes more important. Scalability is simply a limitation of traditional nearest neighbor searching algorithm. Since we already get a boost due to the size of the training set, an approximate algorithm with a little loss of accuarcy but still get a close result and a remarkable speed-up is an appropriate choice.
+
+M. Mujia et al. built FLANN (Fast Library for Approximate Nearest Neighbors) which integrates many approximate nearest neighbor search algorithms.~\citep{muja_flann_2009} The following subsections are summarized from~~\citep{flann_pami_2014}. (but I will concentrate all the relevant contents(description, empirical result, etc.) in each section.)
+\subsubsection{Partitioning Trees}
+The kd-tree is one of the best known nearest neighbor algorithm. It is very effective in low dimensionality spaces, but its performance decreases quickly for high dimensional data. Thus some variations of kd trees is proposed to deal with this problem. They can be roughly classified into four classes.
+	
+	\textbf{"Error bound" approach}. Like other common approximate algorithms, "error bound" approach search by considering $(1+\epsilon)$-approximate nearest neighbors. A priority queue is used to speed up the search.
+	
+	\textbf{"Time bound" approach}. These approach approximating the nearest neighbor by limiting the time spent during the search, where the k-d tree search is stopped early after examining a fixed number of leaf nodes, and in practice it has been found to give better results than the error-constrained algorithm. (strange, a little bit, but it's empirical result)
+	
+	\textbf{Multiple randomized k-d trees}.  In a wide range of comparisons, multiple randomized trees ar among one of the most effective methods for matching high dimensional data.
+	
+	\textbf{Hyperlane k-d trees using non-axis-aligned partitioning}, including PCA-tree, RP-tree, etc. As the overhead of evaluating multiple dimensions, these approaches are not more efficient than a randomized k-d tree decomposition.
+	
+	\textbf{K-d trees on decomposed subspace}. These approaches decompose  the space into several small subsapce by various clustering algorithms instead of using hyperplanes, including hierarchical k-means, vp-tree, etc. (Again, we found the overhead of building such decomposition still can be expensive on some database.)
+	 
+\subsubsection{Hashing Based Nearest Neighbor Techniques}
+One of the trick to make algorithm scalable is using hashing-based method, and recently hash has also been introduced to speed up many computer vision methods.~\citep{dean2013fast, zhang2014scalable} Probably the most common known one is locality sensitive ashing (LSH). The performance of hashing methods is highly dependent on the quality of the hashing functions they use and large body of research has been targeted at improving hashing methods by using data-dependent hashing functions computed using various learning techniques, such as spectral hashing, parameter sensitive hashing, kernelized LSH, etc. Different LSH algorithms provide theoretical guarantees on the search quality, and have been sucessfully used in many projects, however in M. Mujia's expereiments they are often outperformed by randomized k-d trees and the priority search k-means trees.
+\subsubsection{Nearest Neighbor Graph Techniques}
+The graph methods build a graph structure in which points are vertices and edges connect each point to its nearest neighbors. The query points are used to explore this graph using various strategies, such as start from multiple well separated seeds, best-first search, in order to get closer to their nearest neighbors. The construction time of K-NN graph stucture should also be considered. (Some peopel argue that KGrpah library is faster than FLANN. I haven't got time to test)
+\subsubsection{Automatic Configuration of NN Algorithms}
+We can formulate the automatic configuration as a procedure to choose an NN algorithm $A$ with parameter $\theta$ in a certain parameter space $\Theta$, which minimizes a cost function $c(\theta)$
+\begin{equation}
+c(\theta) = \frac{s(\theta)+w_bb(\theta)}{\mbox{min}_{\theta \in \Theta}(s(\theta)+w_bb(\theta))}+w_mm(\theta),
+\end{equation}
+where $s(\theta)$, $b(\theta)$ and $m(\theta)$ represent the search time, tree build time and memory overhead for the tree(s) constructed and queried with parameters $\theta$. The weights $w_b$ and $w_m$ are used to control the relative importance of the build time and memory overhead.
+ 
+ The above optimization is performed in two steps: a global exploration of the parameter space using grid seach followed by a local optimization. In the second step implement further locally explore the parameter space and fine-tune the best solution using Nelder-Mead downhill simplex method.
+ 
+ FLANN uses random sub-sampling cross-validation to generate the data and query points when run the optimization.
+\subsubsection{Scalable Nearest Neighbor Search}
+M. Mujia et al. also point out that many papers show good performance using simple non-parametric methods in conjunction with large scale databases, but one problem is that it is hard to load the data into memory, so they proposed a distributed nearest neighbors algorithm~\citep{flann_pami_2014}, but this is out of my report's scope.
+
+\begin{figure}
+\centering
+\begin{subfigure}[hb]{0.7\textwidth}
+\includegraphics[width=\textwidth]{result-2}
+\caption{Result with provided training data only.}
+\label{fig:10-0}
+\end{subfigure}
+\hfill
+\begin{subfigure}[hb]{0.7\textwidth}
+\includegraphics[width=\textwidth]{result-1}
+\caption{Result of entries with additional data}
+\label{fig:10-2}
+\end{subfigure}
+\caption{ILSVRC Object Detection Result~\citep{imgenetResult}}\label{f11}
+\end{figure}
+
+\subsection{Convolutional Neural Network}
+In recent years, convolutional neural network model has made an impressive breakthrough in various vision tasks. Some researcher called the year 2012 a turning point~\citep{ILSVRC} (not because 21 December). As fig.~\ref{f11} shows, most of the top entries use CNN-based model. Google's team propose a multibox network approach which futher improve their model's mAP to 55.7.~\citep{GoogleDL} (they claim that they expect the highest quality proposal generation method to be learned from scratch as well, though they also admit some recent success of novel sophisticated proposal generation methods). Convolution, sharing parameter and recently abondon fully-connected layer make CNN fast, though training a CNN model on large datasets (like 2 million images) still need days or weeks~\citep{zhou2014learning}. 
+
+\begin{figure}
+\centering
+\includegraphics[width=1\textwidth]{relu}
+\caption{ReLu layers is a complex combination of piece-wisth linear tilings~\citep{supervisedDeepL}}
+\end{figure}
+
+CNN is just a model, and "deep" (non linear mapping between layers) make it have more express power. While structure of deep neural network is still under intense research, some state-of-the-art model simply use linear structure. ~\citep{GoogleLeNet} Pooling, softmax, hinge-loss, these techniques are also used on other vision systems. The hierachical structure give CNN the ability to fulfill multiscale and context-denpendent task (like image pyramid, which be used in SIFT, etc.), and each layer is a concatenation of filters (like filter bank, adaboost). Convolutional features are local(like gabor filter) and invariant (with concatenation and pooling). (I still need to see more in literatrue to justify my conclusion. I remember there are some other advantages but I forget the source.) 
+
+
+\begin{figure}
+\includegraphics[width=\textwidth]{overfeatDense}
+\caption{overFeat, Dense Detection~\citep{key}}
+\end{figure}
+
+~\citep{CNNoff-the-shelf} use overfeat-produced featrue with a linear (L2) SVM on various image recognition tasks and make a comparison with traditional enigneered features. (~\citep{CNNoff-the-shelf} is an interesting paper to read, even for people don't like CNN.)
+
+\begin{figure}
+\centering
+\includegraphics[width=0.7\textwidth]{googlenet}
+\caption{Stucture of GoogLeNet}
+\end{figure}
+
+CNN model could be used on smaller database by using a pre-trained model.
+\section{Experiments and Analysis}
+We randomly split samples of each class into training set and test set 10 times. For each split we use 1, 5, 10, 20, 50 and 100 images of each class for training and run test on a test set containing about 300 images for each class . We finally compute the average top-1 accuracy of the 10 splits. 1-NN with manahattan distance classifier get a better accuracy than 5-NN (we also test 10-NN is the same as 5-NN), but top-5 accuracy may differ which we haven't test. Using a larger image doesn't show improvemnt that justifies the conclusion in ~\citep{torralba200880}. This naive KNN approach is still far behind state-of-the-art method which achieved 95\% accuracy, but we may use scalable nearest neighbor search to handle problem with large dataset. Some futher improvement may be achieved by using space projection or more sophisticate feature like hog2-2, etc, using saliency based approach to first extract some objects first, extracting some semantic context via segmentation. The scene classification or categrization (to some extend) is difficult, because the variety within the same class, so some approaches are proposed to extract some subclass, and train model to handle such variety. An old fashion way is to trian separate models then ensemble them, but now with a better model we may handle it naturally during training. 
+
+ I also have tried to train imagenet cnn model via caffe (a deep learning framework)~\citep{caffe}. (But the installation is a bit nightmare, like other open source library. I spend days to fix link error and resolve compatibility issues.) Finally I got a memory not engouh exception when I trained the model with CUDA(the loss is around 7 at that time), and I don't think I could finish it in time (I'd rather to use a ec2 with tk40).
+\begin{figure}
+\centering
+\includegraphics[width=0.6\textwidth]{finalPlot1.eps}
+\end{figure}
+\section{Discussion}
+\subsection{Learned Features vs. Hand-made features}
+According to Y. Lecun\footnote{http://techtalks.tv/talks/deep-learning/58122/, 21:00-25:00}, the drawback of hand-made features is that you have to make assumptions about the nature of the signal (image signal to computer vision). (That the only reason he said on this issue in class) In other words, hypotheses alao mean limits. Learned features have better generality and less ad-hoc design (while non-parameter approaches have the same advantage), e.g. histogram of sparse codes~\citep{ren2013histograms} has much simpler design options than HoG to tune. The discussion between learning and hand-made features reflects two important aspects of artificial intelligence, learning and reasoning. However, even deep learning approaches still need to be tuned~\citep{finetune14berkeley} and reasoning in post-processing. In fact, CNN model integrates many best-practice from previous model, such as soft-max pooling in HoG (also used in other histogram-base approaches), hinge-loss in SVM, latent variable(latent SVM, HMM, etc.). Finally, many algorithm could become scalable, such Bradley-Fayyad-Reina(BFR) algorithm to K-Means, progress and sucess on other models are possible.
+
+Generality of learned features is important for approaching "real" AI (somewhat real), but it is fun to make features by hand. Keep calm, even fisher vector based method is still alive~\citep{ILSVRC}.
+
+%\section{Acknowledgements}
+%I would like to thank my advisor Prof. Wu for his expert advising. Meanwhile I would also like to express my gratitude to all professors at Northwestern University EECS who had ever taught me. I learn a lot during the last year at NU EECS. Platinum level (taugt me 3 courses): Prof. Doug Downey; Gold level (taught me 2 courses): Prof. Ying Wu; Silver level (taught me 1 course): Prof. Chris Riesbeck, Prof. Fabián E. Bustamante, Prof. Jason D. Hartline, Prof. Chen Xin, Prof. Oliver Cossairt, Prof. Aggelos K. Katsaggelos, Prof. Nikos Hardavellas and Jeremy Watt(as instructor). All levels are equal in my heart.
+%\section{}
+\bibliographystyle{plain}
+%\bibliographystyle{plainnat}
+\bibliography{report}
+\end{document}
